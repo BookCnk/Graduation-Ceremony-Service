@@ -32,9 +32,15 @@ export const loginController = async ({
 
 export const registerController = async ({
   body,
-}: any): Promise<ApiResponse<null>> => {
+}: {
+  body: { name: string; password: string };
+}): Promise<ApiResponse<null>> => {
   const { name, password } = body;
+
   if (!name || !password) return error("Name and password required");
-  await createUser(name, password);
+
+  const created = await createUser(name, password);
+  if (!created) return error("User already exists");
+
   return success(null, "User registered");
 };

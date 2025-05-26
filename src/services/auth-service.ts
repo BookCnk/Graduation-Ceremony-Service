@@ -8,12 +8,21 @@ export const findUserByName = async (name: string) => {
   return rows[0];
 };
 
-export const createUser = async (name: string, password: string) => {
+export const createUser = async (
+  name: string,
+  password: string
+): Promise<boolean> => {
+  const [rows]: any = await db.query("SELECT id FROM users WHERE name = ?", [
+    name,
+  ]);
+  if (rows.length > 0) return false;
+
   const hashed = await hashPassword(password);
   await db.query("INSERT INTO users (name, password) VALUES (?, ?)", [
     name,
     hashed,
   ]);
+  return true;
 };
 
 export const verifyUser = async (name: string, password: string) => {
