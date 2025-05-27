@@ -1,5 +1,6 @@
 import { db } from "@/config/db";
 import { hashPassword, comparePassword } from "@/utils/hash";
+import { formatToDateTimeICT } from "@/utils/date";
 
 export const findUserByName = async (name: string) => {
   const [rows]: any = await db.query("SELECT * FROM users WHERE name = ?", [
@@ -30,12 +31,22 @@ export const verifyUser = async (name: string, password: string) => {
   const user = await findUserByName(name);
   if (!user) return null;
   const isMatch = await comparePassword(password, user.password);
+  await db.query(
+    "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?",
+    [user.id]
+  );
+
   return isMatch ? user : null;
 };
 
 export const getAllUsers = async () => {
-  const [rows]: any = await db.query("SELECT id, name, created_at FROM users");
-  console.log("🔥 /auth/users called");
+  const [rows]: any = await db.query(
+    "SELECT id, name, last_login, role, created_at FROM users"
+  );
 
-  return rows;
+  return rows.map((row: any) => ({
+    ...row,
+    last_login: formatToDateTimeICT(row.last_login),
+    created_at: formatToDateTimeICT(row.created_at),
+  }));
 };
