@@ -1,7 +1,9 @@
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors"; // ✅ import plugin
 import { userRoutes } from "@/routes/user-route";
+import { ddlRoutes } from "@/routes/ddl-route";
 import { db } from "@/config/db";
+import { apiRoutes } from "@/routes/graduate-route";
 
 const app = new Elysia();
 
@@ -14,7 +16,9 @@ app.use(
 );
 
 // ✅ Register routes
-app.group("/api/v1", (app) => app.use(userRoutes));
+app.group("/api/v1", (group) =>
+  group.use(userRoutes).use(ddlRoutes).use(apiRoutes)
+);
 
 // ✅ Health check
 app.get("/health", async () => {

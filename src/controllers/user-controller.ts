@@ -1,5 +1,10 @@
 import { success, error } from "@/utils/response";
-import { getAllUsers, verifyUser, createUser } from "@/services/auth-service";
+import {
+  getAllUsers,
+  verifyUser,
+  createUser,
+  deleteUserById,
+} from "@/services/auth-service";
 import type { User } from "@/types/user";
 import type { ApiResponse } from "@/types/response";
 import { generateToken } from "@/utils/jwt";
@@ -22,6 +27,7 @@ export const loginController = async ({
   const token = generateToken({
     id: user.id,
     name: user.name,
+    role: user.role,
   });
 
   // ✅ ตัด password ออกก่อนส่งกลับ
@@ -43,4 +49,22 @@ export const registerController = async ({
   if (!created) return error("User already exists");
 
   return success(null, "User registered");
+};
+
+export const deleteUserController = async ({
+  params,
+}: {
+  params: { id: string };
+}): Promise<ApiResponse<null>> => {
+  const userId = parseInt(params.id);
+
+  if (isNaN(userId)) {
+    return error("Invalid user ID");
+  }
+
+  const deleted = await deleteUserById(userId);
+
+  if (!deleted) return error("User not found or already deleted");
+
+  return success(null, "User deleted successfully");
 };

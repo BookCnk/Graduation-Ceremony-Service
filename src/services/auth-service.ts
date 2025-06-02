@@ -50,3 +50,8 @@ export const getAllUsers = async () => {
     created_at: formatToDateTimeICT(row.created_at),
   }));
 };
+
+export const deleteUserById = async (id: number): Promise<boolean> => {
+  const [result]: any = await db.query("DELETE FROM users WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+};

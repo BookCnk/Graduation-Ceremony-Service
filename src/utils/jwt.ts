@@ -18,13 +18,13 @@ const getExpiresIn = (): SignOptions["expiresIn"] => {
   return value as SignOptions["expiresIn"];
 };
 
-export const generateToken = (
-  payload: object,
-  expiresIn: SignOptions["expiresIn"] = getExpiresIn()
-): string => {
-  return jwt.sign(payload, secret, { expiresIn });
-};
+  export const generateToken = (
+    payload: object,
+    expiresIn: SignOptions["expiresIn"] = getExpiresIn()
+  ): string => {
+    return jwt.sign(payload, secret, { expiresIn });
+  };
 
-export const verifyToken = (token: string) => {
-  return jwt.verify(token, secret);
-};
+  export const verifyToken = (token: string) => {
+    return jwt.verify(token, secret);
+  };
