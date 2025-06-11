@@ -9,6 +9,7 @@ import {
   getRoundCallSummary,
   getNextGraduatesAfterFirst,
   setGraduateAsReceived,
+  resetReceivedCards,
 } from "@/services/graduate-service";
 import type { ApiResponse } from "@/types/response";
 
@@ -132,4 +133,11 @@ export const setGraduateAsReceivedController = async ({
     console.error("❌ setGraduateAsReceivedController error:", err);
     return error("ไม่สามารถอัปเดตสถานะบัณฑิตได้");
   }
+};
+
+export const resetReceivedCardsController = async () => {
+  const result = await resetReceivedCards();
+  if (!result.success) return error("ไม่มีข้อมูลที่ถูกรีเซ็ต");
+
+  return success(null, "รีเซ็ตข้อมูลการรับบัตรเรียบร้อยแล้ว");
 };

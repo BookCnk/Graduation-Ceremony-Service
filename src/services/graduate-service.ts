@@ -137,12 +137,83 @@ interface QuotaGroupPayload {
   round: number;
   faculties: QuotaFaculty[];
 }
+
 export const insertQuotaData = async (
   payload: QuotaGroupPayload[]
 ): Promise<{ success: boolean }> => {
+  // 🔍 รอบทั้งหมดที่ผู้ใช้ส่งมา
+  const incomingRounds = payload.map((g) => g.round);
+
+  // 🧹 ลบรอบที่ "ไม่ได้อยู่ใน payload"
+  if (incomingRounds.length > 0) {
+    const placeholders = incomingRounds.map(() => "?").join(",");
+    const [rows]: any = await db.query(
+      `SELECT id FROM graduation_ceremony.graduation_round 
+       WHERE round_number NOT IN (${placeholders})`,
+      incomingRounds
+    );
+
+    const roundIdsToDelete = rows.map((r: any) => r.id);
+
+    if (roundIdsToDelete.length > 0) {
+      // ลบ quota เดิม
+      await db.query(
+        `DELETE FROM graduation_ceremony.round_quota 
+         WHERE round_id IN (${roundIdsToDelete.map(() => "?").join(",")})`,
+        roundIdsToDelete
+      );
+
+      // ล้าง graduate.round_id
+      await db.query(
+        `UPDATE graduation_ceremony.graduate 
+         SET round_id = NULL 
+         WHERE round_id IN (${roundIdsToDelete.map(() => "?").join(",")})`,
+        roundIdsToDelete
+      );
+
+      // ลบ round ออกจากระบบ
+      await db.query(
+        `DELETE FROM graduation_ceremony.graduation_round 
+         WHERE id IN (${roundIdsToDelete.map(() => "?").join(",")})`,
+        roundIdsToDelete
+      );
+    }
+  } else {
+    // ✅ ถ้า payload = [] → ลบทุกอย่าง
+    const [rows]: any = await db.query(
+      `SELECT id FROM graduation_ceremony.graduation_round`
+    );
+
+    const allRoundIds = rows.map((r: any) => r.id);
+
+    if (allRoundIds.length > 0) {
+      await db.query(
+        `DELETE FROM graduation_ceremony.round_quota 
+         WHERE round_id IN (${allRoundIds.map(() => "?").join(",")})`,
+        allRoundIds
+      );
+      await db.query(
+        `UPDATE graduation_ceremony.graduate 
+         SET round_id = NULL 
+         WHERE round_id IN (${allRoundIds.map(() => "?").join(",")})`,
+        allRoundIds
+      );
+      await db.query(
+        `DELETE FROM graduation_ceremony.graduation_round 
+         WHERE id IN (${allRoundIds.map(() => "?").join(",")})`,
+        allRoundIds
+      );
+    }
+
+    return { success: true };
+  }
+
+  // ✅ ทำงานตามรอบที่ส่งเข้ามา
   for (const group of payload) {
+    // 🔍 ตรวจรอบ
     const [existingRounds]: any = await db.query(
-      `SELECT id FROM graduation_round WHERE round_number = ?`,
+      `SELECT id FROM graduation_ceremony.graduation_round 
+       WHERE round_number = ?`,
       [group.round]
     );
 
@@ -151,30 +222,46 @@ export const insertQuotaData = async (
     if (existingRounds.length > 0) {
       roundId = existingRounds[0].id;
     } else {
+      // ไม่มี faculty → ไม่ต้องสร้างรอบใหม่
+      if (!group.faculties || group.faculties.length === 0) continue;
+
       const [inserted]: any = await db.query(
-        `INSERT INTO graduation_round (round_number, max_capacity, description)
+        `INSERT INTO graduation_ceremony.graduation_round 
+         (round_number, max_capacity, description)
          VALUES (?, ?, ?)`,
         [group.round, 100, `รอบที่ ${group.round}`]
       );
       roundId = inserted.insertId;
     }
 
-    // 🧹 เคลียร์ของเก่า
-    await db.query(`DELETE FROM round_quota WHERE round_id = ?`, [roundId]);
-    await db.query(`UPDATE graduate SET round_id = NULL WHERE round_id = ?`, [
-      roundId,
-    ]);
+    // 🧹 ล้างข้อมูลเดิมของรอบนี้
+    await db.query(
+      `DELETE FROM graduation_ceremony.round_quota 
+       WHERE round_id = ?`,
+      [roundId]
+    );
+    await db.query(
+      `UPDATE graduation_ceremony.graduate 
+       SET round_id = NULL 
+       WHERE round_id = ?`,
+      [roundId]
+    );
 
+    // ⛔ ไม่มี faculty → จบแค่นี้
+    if (!group.faculties || group.faculties.length === 0) continue;
+
+    // 🔁 เพิ่ม quota ใหม่
     for (const faculty of group.faculties) {
-      // 💾 Insert ใหม่ทั้งหมด
       await db.query(
-        `INSERT INTO round_quota (round_id, faculty_id, quota)
+        `INSERT INTO graduation_ceremony.round_quota 
+         (round_id, faculty_id, quota)
          VALUES (?, ?, ?)`,
         [roundId, faculty.faculty_id, faculty.quota]
       );
 
+      // 🔁 จัดนักศึกษาเข้ารอบตามลำดับ sequence
       const [graduatesToUpdate]: any = await db.query(
-        `SELECT id FROM graduate
+        `SELECT id FROM graduation_ceremony.graduate
          WHERE faculty_id = ? AND round_id IS NULL
          ORDER BY sequence ASC
          LIMIT ?`,
@@ -184,7 +271,8 @@ export const insertQuotaData = async (
       if (graduatesToUpdate.length > 0) {
         const ids = graduatesToUpdate.map((g: any) => g.id);
         await db.query(
-          `UPDATE graduate SET round_id = ?
+          `UPDATE graduation_ceremony.graduate 
+           SET round_id = ?
            WHERE id IN (${ids.map(() => "?").join(",")})`,
           [roundId, ...ids]
         );
@@ -372,4 +460,14 @@ export const setGraduateAsReceived = async (
   );
 
   return { success: true };
+};
+
+export const resetReceivedCards = async (): Promise<{ success: boolean }> => {
+  const [result]: any = await db.query(
+    `UPDATE graduation_ceremony.graduate 
+     SET has_received_card = 0 
+     WHERE has_received_card = 1`
+  );
+
+  return { success: result.affectedRows > 0 };
 };
