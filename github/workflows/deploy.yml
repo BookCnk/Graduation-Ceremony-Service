@@ -1,0 +1,12 @@
+name: deploy workflow
+
+on: [push]
+
+jobs: 
+  Deploy: 
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: hello world
+        run: |
+          echo "hello world"

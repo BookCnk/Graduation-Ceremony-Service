@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_USER=graduation_user
+      - DB_PASSWORD=graduation_password
+      - DB_NAME=graduation_db
+      - JWT_SECRET=your_jwt_secret_key
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - graduation-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=graduation_db
+      - MYSQL_USER=graduation_user
+      - MYSQL_PASSWORD=graduation_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - graduation-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=graduation_user
+      - PMA_PASSWORD=graduation_password
+    depends_on:
+      - db
+    networks:
+      - graduation-network
+
+volumes:
+  mysql_data:
+
+networks:
+  graduation-network:
+    driver: bridge
