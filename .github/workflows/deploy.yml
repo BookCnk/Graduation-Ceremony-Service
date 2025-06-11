@@ -1,12 +1,25 @@
-name: deploy workflow
+name: Deploy on Internal VM
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
-jobs: 
-  Deploy: 
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: self-hosted
+
     steps:
-      - name: hello world
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Docker Compose Deploy
         run: |
-          echo "hello world"
+          docker-compose down
+          docker-compose up -d --build
