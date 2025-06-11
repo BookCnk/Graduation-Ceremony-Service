@@ -11,7 +11,8 @@ export const findUserByName = async (name: string) => {
 
 export const createUser = async (
   name: string,
-  password: string
+  password: string,
+  role: string = "user" // ใส่ default เป็น 'user' หากไม่ส่ง role มา
 ): Promise<boolean> => {
   const [rows]: any = await db.query("SELECT id FROM users WHERE name = ?", [
     name,
@@ -19,9 +20,10 @@ export const createUser = async (
   if (rows.length > 0) return false;
 
   const hashed = await hashPassword(password);
-  await db.query("INSERT INTO users (name, password) VALUES (?, ?)", [
+  await db.query("INSERT INTO users (name, password, role) VALUES (?, ?, ?)", [
     name,
     hashed,
+    role,
   ]);
   return true;
 };
@@ -53,5 +55,26 @@ export const getAllUsers = async () => {
 
 export const deleteUserById = async (id: number): Promise<boolean> => {
   const [result]: any = await db.query("DELETE FROM users WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+};
+
+export const changePassword = async (
+  name: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<boolean> => {
+  const user = await findUserByName(name);
+  if (!user) {
+    return false;
+  }
+  const isMatch = await comparePassword(oldPassword, user.password);
+  if (!isMatch) return false;
+
+  const hashedNew = await hashPassword(newPassword);
+  const [result]: any = await db.query(
+    "UPDATE users SET password = ? WHERE id = ?",
+    [hashedNew, user.id]
+  );
+
   return result.affectedRows > 0;
 };

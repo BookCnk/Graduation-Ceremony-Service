@@ -4,6 +4,7 @@ import {
   verifyUser,
   createUser,
   deleteUserById,
+  changePassword,
 } from "@/services/auth-service";
 import type { User } from "@/types/user";
 import type { ApiResponse } from "@/types/response";
@@ -30,7 +31,6 @@ export const loginController = async ({
     role: user.role,
   });
 
-  // ✅ ตัด password ออกก่อนส่งกลับ
   const { password: _, ...safeUser } = user;
 
   return success({ user: safeUser, token }, "Login successful");
@@ -39,13 +39,13 @@ export const loginController = async ({
 export const registerController = async ({
   body,
 }: {
-  body: { name: string; password: string };
+  body: { name: string; password: string; role?: string };
 }): Promise<ApiResponse<null>> => {
-  const { name, password } = body;
+  const { name, password, role = "user" } = body;
 
   if (!name || !password) return error("Name and password required");
 
-  const created = await createUser(name, password);
+  const created = await createUser(name, password, role);
   if (!created) return error("User already exists");
 
   return success(null, "User registered");
@@ -67,4 +67,21 @@ export const deleteUserController = async ({
   if (!deleted) return error("User not found or already deleted");
 
   return success(null, "User deleted successfully");
+};
+
+export const changePasswordController = async ({
+  body,
+}: {
+  body: { name: string; oldPassword: string; newPassword: string };
+}): Promise<ApiResponse<null>> => {
+  const { name, oldPassword, newPassword } = body;
+
+  if (!name || !oldPassword || !newPassword) {
+    return error("Please provide name, old password, and new password");
+  }
+
+  const changed = await changePassword(name, oldPassword, newPassword);
+  if (!changed) return error("Incorrect old password or user not found");
+
+  return success(null, "Password changed successfully");
 };
