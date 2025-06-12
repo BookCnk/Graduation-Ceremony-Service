@@ -1,10 +1,11 @@
-FROM oven/bun:1.0.29-debian
+FROM node:22
+
 WORKDIR /app
 
 COPY . .
 
-RUN bun install
+RUN npm install
 
 EXPOSE 3000
 
-CMD ["bun", "run", "dev"]
+CMD ["node", "index.ts"]
