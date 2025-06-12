@@ -19,6 +19,7 @@
     "mysql2": "^3.14.1"
   },
   "scripts": {
-    "dev": "bun --watch run index.ts"
+    "dev": "bun --watch run index.ts",
+    "build": "bun build index.ts"
   }
 }
