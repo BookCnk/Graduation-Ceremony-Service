@@ -12,7 +12,7 @@ RUN npm install
 COPY . .
 
 # Install ts-node and typescript globally (optional, can be local too)
-RUN npm install -g ts-node typescript
+RUN npm cache clean --force && npm install
 
 # Expose the app port
 EXPOSE 3000
