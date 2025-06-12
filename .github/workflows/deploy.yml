@@ -13,11 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
-      - name: Build project
-        run: npm run build
+      - name: Install dependencies with Bun
+        run: bun install
+
+      # ถ้าคุณมี build script เช่น "build": "bun build index.ts"
+      - name: Build project (ถ้ามี build script)
+        run: bun run build
 
       - name: Docker Compose Deploy
         run: |
