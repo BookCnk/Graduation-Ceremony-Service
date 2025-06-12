@@ -1,14 +1,10 @@
-FROM oven/bun:1.0
+FROM oven/bun:1.2.16
 
 WORKDIR /app
 
-COPY package.json .
-COPY package-lock.json* .
-COPY bun.lockb* .
+COPY . .
 
 RUN bun install
-
-COPY . .
 
 EXPOSE 3000
 
