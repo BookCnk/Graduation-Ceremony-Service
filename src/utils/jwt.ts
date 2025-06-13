@@ -4,11 +4,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const secret: string = process.env.JWT_SECRET || "default_secret";
+const secret: string = process.env.JWT_SECRET ?? "default_secret";
 
 // 🔧 ใช้ Type Guard เพื่อแน่ใจว่า expiresIn ถูกต้อง
 const getExpiresIn = (): SignOptions["expiresIn"] => {
-  const value = process.env.JWT_EXPIRES_IN || "1h";
+  const value = process.env.JWT_EXPIRES_IN ?? "1h";
 
   // ถ้าเป็นเลข → แปลงเป็น number
   const num = Number(value);
