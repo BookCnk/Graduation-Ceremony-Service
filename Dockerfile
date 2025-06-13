@@ -1,21 +1,23 @@
-FROM node:22
+# 📄 Dockerfile
+FROM node:22                                
 
-# Create app directory
-WORKDIR /
+WORKDIR /app
 
-# Copy package files separately for better caching
+# 1️⃣ ติดตั้ง npm 9.x (หลบ bug idealTree ของ npm 10.x)
+RUN npm install -g npm@9.9.3
 
-# Install dependencies
-RUN npm install
+# 2️⃣ คัดลอกไฟล์ lock ก่อน เพื่อใช้ layer cache ได้เต็มที่
+COPY package*.json ./
 
-# Copy the rest of the app
+# 3️⃣ สั่ง clean cache แล้วใช้ npm ci (เร็วกว่า/เสถียรกว่า npm install)
+RUN npm cache clean --force \
+ && npm ci --omit=dev      
+# 4️⃣ คัดลอกซอร์สโค้ดทั้งหมด
 COPY . .
 
-# Install ts-node and typescript globally (optional, can be local too)
-RUN npm cache clean --force && npm install
+# 👉 (ถ้าเป็น TypeScript production):
+# RUN npm run build     # สร้าง dist/ ก่อนรันจริง
 
-# Expose the app port
 EXPOSE 3000
 
-# Run with ts-node
-CMD ["ts-node", "index.ts"]
+CMD ["npm", "start"]     # หรือ ["node","dist/index.js"] ถ้าคุณ build ออก JS แล้ว

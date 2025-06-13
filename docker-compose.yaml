@@ -1,24 +1,23 @@
+# 📄 docker-compose.yml
 version: "3.8"
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_USER=graduation_user
-      - DB_PASSWORD=graduation_password
-      - DB_NAME=graduation_db
-      - JWT_SECRET=your_jwt_secret_key
+      NODE_ENV: development
+      DB_HOST: db
+      DB_USER: graduation_user
+      DB_PASSWORD: graduation_password
+      DB_NAME: graduation_db
+      JWT_SECRET: your_jwt_secret_key
     depends_on:
       - db
     volumes:
-      - .:/app
-      - /app/node_modules
+      - .:/app                 # hot-reload โค้ด
+      - /app/node_modules      # ป้องกัน node_modules ใน container ไม่ถูกทับ
     networks:
       - graduation-network
 
@@ -27,10 +26,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root_password
-      - MYSQL_DATABASE=graduation_db
-      - MYSQL_USER=graduation_user
-      - MYSQL_PASSWORD=graduation_password
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: graduation_db
+      MYSQL_USER: graduation_user
+      MYSQL_PASSWORD: graduation_password
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -42,9 +41,9 @@ services:
     ports:
       - "8080:80"
     environment:
-      - PMA_HOST=db
-      - PMA_USER=graduation_user
-      - PMA_PASSWORD=graduation_password
+      PMA_HOST: db
+      PMA_USER: graduation_user
+      PMA_PASSWORD: graduation_password
     depends_on:
       - db
     networks:
