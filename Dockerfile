@@ -1,18 +1,15 @@
-FROM oven/bun:1.0.29
+FROM node:20-slim
 
 WORKDIR /app
 
-# copy manifest + lock (ไม่ว่าไฟล์ไหนจะมีอยู่)
-COPY package.json bun.lock* ./
+# Copy package files
+COPY package*.json ./
 
-RUN bun install --no-progress
+# Install dependencies
+RUN npm install
 
 COPY . .
 
 EXPOSE 3000
 
-# ✅ เปิด safe mode เพื่อหลีกเลี่ยง AVX/JIT
-ENV BUN_DISABLE_JIT=1
-
-# ✅ รัน Bun หลังจากตั้ง ENV
-CMD ["bun", "run", "index.ts"]
+CMD ["npm", "start"]
