@@ -10,4 +10,5 @@ RUN bun install --no-progress
 COPY . .
 
 EXPOSE 3000
-CMD ["bun", "run", "--watch", "index.ts"]
+CMD ["bun", "--version"]
+CMD ["bun", "run", "index.ts"]
