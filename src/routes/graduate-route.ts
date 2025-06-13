@@ -36,6 +36,6 @@ export const apiRoutes = new Elysia()
   )
   .post(
     "/set-received",
-    async ({ body }) => await setGraduateAsReceivedController({ body })
+    async ({ body }: { body: { id: any } }) => await setGraduateAsReceivedController({ body })
   )
   .post("/reset-cards", resetReceivedCardsController);
