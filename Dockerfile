@@ -11,4 +11,5 @@ COPY . .
 
 EXPOSE 3000
 CMD ["bun", "--version"]
+ENV BUN_DISABLE_JIT=1
 CMD ["bun", "run", "index.ts"]
