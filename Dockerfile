@@ -1,23 +1,16 @@
-# 📄 Dockerfile
-FROM node:22                                
+FROM oven/bun:1.0.29
 
-WORKDIR /app
+WORKDIR /
 
-# 1️⃣ ติดตั้ง npm 9.x (หลบ bug idealTree ของ npm 10.x)
-RUN npm install -g npm@9.9.3
+# คัดลอกเฉพาะ dependency files ก่อน (ช่วยให้ Docker build เร็วขึ้น)
+COPY package.json bun.lockb ./
 
-# 2️⃣ คัดลอกไฟล์ lock ก่อน เพื่อใช้ layer cache ได้เต็มที่
-COPY package*.json ./
+# ติดตั้ง dependencies ด้วย bun
+RUN bun install --no-progress
 
-# 3️⃣ สั่ง clean cache แล้วใช้ npm ci (เร็วกว่า/เสถียรกว่า npm install)
-RUN npm cache clean --force \
- && npm ci --omit=dev      
-# 4️⃣ คัดลอกซอร์สโค้ดทั้งหมด
+# คัดลอก source code ทั้งหมด
 COPY . .
-
-# 👉 (ถ้าเป็น TypeScript production):
-# RUN npm run build     # สร้าง dist/ ก่อนรันจริง
 
 EXPOSE 3000
 
-CMD ["npm", "start"]     # หรือ ["node","dist/index.js"] ถ้าคุณ build ออก JS แล้ว
+CMD ["bun", "run", "--watch", "index.ts"]
