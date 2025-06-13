@@ -1,16 +1,13 @@
 FROM oven/bun:1.0.29
 
-WORKDIR /
+WORKDIR /app
 
-# คัดลอกเฉพาะ dependency files ก่อน (ช่วยให้ Docker build เร็วขึ้น)
-COPY package.json bun.lockb ./
+# copy manifest + lock (ไม่ว่าไฟล์ไหนจะมีอยู่)
+COPY package.json bun.lock* ./
 
-# ติดตั้ง dependencies ด้วย bun
 RUN bun install --no-progress
 
-# คัดลอก source code ทั้งหมด
 COPY . .
 
 EXPOSE 3000
-
 CMD ["bun", "run", "--watch", "index.ts"]
