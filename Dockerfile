@@ -10,6 +10,9 @@ RUN bun install --no-progress
 COPY . .
 
 EXPOSE 3000
-CMD ["bun", "--version"]
+
+# ✅ เปิด safe mode เพื่อหลีกเลี่ยง AVX/JIT
 ENV BUN_DISABLE_JIT=1
+
+# ✅ รัน Bun หลังจากตั้ง ENV
 CMD ["bun", "run", "index.ts"]
