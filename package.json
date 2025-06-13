@@ -1,12 +1,12 @@
 {
   "name": "graduation-ceremony-service",
-  "type": "commonjs",
+  "version": "1.0.0",
   "private": true,
-  "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^24.0.1",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+  "type": "commonjs",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p .",
+    "start": "node -r tsconfig-paths/register dist/index.js"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.3.3",
@@ -17,9 +17,11 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.1"
   },
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc src/index.ts --outDir dist",
-    "start": "tsx src/index.ts"
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^24.0.1",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }
