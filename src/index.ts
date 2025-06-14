@@ -8,20 +8,17 @@ import { apiRoutes } from "./routes/graduate-route";
 
 const app = new Elysia({ adapter: node() });
 
-// ✅ ใช้งาน CORS ก่อนใช้งาน routes
 app.use(
   cors({
-    origin: "*", // หรือใส่ whitelist เช่น: ['http://localhost:5173']
+    origin: "*", 
     credentials: true,
   })
 );
 
-// ✅ Register routes
 app.group("/api/v1", (group) =>
   group.use(userRoutes).use(ddlRoutes).use(apiRoutes)
 );
 
-// ✅ Health check
 app.get("/health", async () => {
   try {
     await db.query("SELECT 1");
