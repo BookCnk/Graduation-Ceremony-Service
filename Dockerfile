@@ -1,34 +1,21 @@
-FROM node:20-slim AS builder
-
-WORKDIR /app
-
-# Copy package files and TypeScript config
-COPY package*.json ./
-COPY tsconfig*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build TypeScript code
-RUN npm run build
-
-# Production stage
+# Single-stage Dockerfile: build **and** run in the same image
 FROM node:20-slim
 
 WORKDIR /app
 
-# Copy package files
+# 1️⃣  Copy dependency manifests first for better layer caching
 COPY package*.json ./
+COPY tsconfig*.json ./
 
-# Install only production dependencies
-RUN npm install --only=production
+# 2️⃣  Install **all** deps (dev + prod) so we can compile TypeScript
+RUN npm install && npm cache clean --force
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist ./dist
+# 3️⃣  Copy the rest of the source
+COPY . .
+
+# 4️⃣  Build TypeScript, then remove dev-only deps to slim the image
+RUN npm run build \
+ && npm prune --production
 
 EXPOSE 3000
-
 CMD ["npm", "start"]
