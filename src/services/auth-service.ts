@@ -1,6 +1,6 @@
-import { db } from "@/config/db";
-import { hashPassword, comparePassword } from "@/utils/hash";
-import { formatToDateTimeICT } from "@/utils/date";
+import { db } from "../config/db";
+import { hashPassword, comparePassword } from "../utils/hash";
+import { formatToDateTimeICT } from "../utils/date";
 
 export const findUserByName = async (name: string) => {
   const [rows]: any = await db.query("SELECT * FROM users WHERE name = ?", [

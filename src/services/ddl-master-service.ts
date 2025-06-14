@@ -1,5 +1,5 @@
 // services/dropdown-service.ts
-import { db } from "@/config/db";
+import { db } from "../config/db";
 
 export const getFaculty = async () => {
   const [rows]: any = await db.query(

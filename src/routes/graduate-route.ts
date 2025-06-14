@@ -10,7 +10,7 @@ import {
   getNextGraduatesAfterFirstController,
   setGraduateAsReceivedController,
   resetReceivedCardsController,
-} from "@/controllers/graduate-controller";
+} from "../controllers/graduate-controller";
 
 export const apiRoutes = new Elysia()
   .post("/graduates", getGraduatesController)

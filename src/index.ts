@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
 import { node } from "@elysiajs/node";
 import { cors } from "@elysiajs/cors";
-import { userRoutes } from "@/routes/user-route";
-import { ddlRoutes } from "@/routes/ddl-route";
-import { db } from "@/config/db";
-import { apiRoutes } from "@/routes/graduate-route";
+import { userRoutes } from "./routes/user-route";
+import { ddlRoutes } from "./routes/ddl-route";
+import { db } from "./config/db";
+import { apiRoutes } from "./routes/graduate-route";
 
 const app = new Elysia({ adapter: node() });
 

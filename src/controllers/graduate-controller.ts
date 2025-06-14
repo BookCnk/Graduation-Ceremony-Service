@@ -1,4 +1,4 @@
-import { success, error } from "@/utils/response";
+import { success, error } from "../utils/response";
 import {
   getGraduatesByFacultyPaginated,
   getGroupedQuotaByRound,
@@ -10,8 +10,8 @@ import {
   getNextGraduatesAfterFirst,
   setGraduateAsReceived,
   resetReceivedCards,
-} from "@/services/graduate-service";
-import type { ApiResponse } from "@/types/response";
+} from "../services/graduate-service";
+import type { ApiResponse } from "../types/response";
 
 export const getGraduatesController = async ({
   body,

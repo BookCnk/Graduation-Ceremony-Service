@@ -1,14 +1,14 @@
-import { success, error } from "@/utils/response";
+import { success, error } from "../utils/response";
 import {
   getAllUsers,
   verifyUser,
   createUser,
   deleteUserById,
   changePassword,
-} from "@/services/auth-service";
-import type { User } from "@/types/user";
-import type { ApiResponse } from "@/types/response";
-import { generateToken } from "@/utils/jwt";
+} from "../services/auth-service";
+import type { User } from "../types/user";
+import type { ApiResponse } from "../types/response";
+import { generateToken } from "../utils/jwt";
 
 export const getAllUsersController = async (): Promise<ApiResponse<User[]>> => {
   const users = await getAllUsers();
