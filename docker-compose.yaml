@@ -10,7 +10,7 @@ services:
       DB_HOST: db
       DB_USER: graduation_user
       DB_PASSWORD: graduation_password
-      DB_NAME: graduation_db
+      DB_NAME: graduation_ceremony
       JWT_SECRET: your_jwt_secret_key
     depends_on:
       - db
@@ -24,7 +24,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: graduation_db
+      MYSQL_DATABASE: graduation_ceremony
       MYSQL_USER: graduation_user
       MYSQL_PASSWORD: graduation_password
     volumes:

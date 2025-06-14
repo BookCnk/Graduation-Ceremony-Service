@@ -26,13 +26,10 @@ export const getGraduatesController = async ({
   if (isNaN(page) || page < 1) return error("Invalid page number");
   if (isNaN(pageSize) || pageSize < 1) return error("Invalid page size");
 
-  const result = await getGraduatesByFacultyPaginated(
-    facultyId,
-    page,
-    pageSize
-  );
+  const data = await getGraduatesByFacultyPaginated(facultyId, page, pageSize);
+  console.log(data);
 
-  return success(result);
+  return success(data);
 };
 
 export const getQuotaGroupsController = async (): Promise<ApiResponse<any>> => {

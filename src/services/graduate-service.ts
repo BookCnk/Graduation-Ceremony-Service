@@ -30,7 +30,7 @@ export const getGraduatesByFacultyPaginated = async (
     [facultyId, pageSize, offset]
   );
 
-  const rows = (result1 as any[])[0];
+  const data = (result1 as any[])[0];
 
   const result2 = await db.query(
     `SELECT COUNT(*) as total FROM graduation_ceremony.graduate WHERE faculty_id = ?`,
@@ -39,7 +39,7 @@ export const getGraduatesByFacultyPaginated = async (
   const total = (result2 as any[])[0][0].total;
 
   return {
-    data: rows,
+    data,
     total,
     page,
     pageSize,
@@ -48,7 +48,6 @@ export const getGraduatesByFacultyPaginated = async (
 
 export const getGroupedQuotaByRound = async () => {
   const [rows]: any = await db.query(`
-    -- 🔹 ข้อมูลคณะที่จัดรอบแล้ว + นับเฉพาะคนที่ยังไม่ถูกจัดรอบ
     SELECT 
         r.round_number,
         f.id AS faculty_id,
@@ -64,7 +63,6 @@ export const getGroupedQuotaByRound = async () => {
 
     UNION ALL
 
-    -- 🔹 ข้อมูล "เฉพาะ" คณะที่ยังไม่อยู่ใน round_quota
     SELECT 
         NULL AS round_number,
         f.id AS faculty_id,
