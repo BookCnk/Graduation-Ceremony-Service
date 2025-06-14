@@ -1,7 +1,7 @@
 # Single-stage Dockerfile: build **and** run in the same image
 FROM node:20-slim
 
-WORKDIR /app
+WORKDIR /
 
 # 1️⃣  Copy dependency manifests first for better layer caching
 COPY package*.json ./
