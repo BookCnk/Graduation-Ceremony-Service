@@ -1,32 +1,36 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
+    /* ---------- Environment ---------- */
+    "target": "ES2020", // ESNext + Node-friendly async/await
+    "lib": ["ES2020"],
     "jsx": "react-jsx",
-    "allowJs": true,
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["*"]
-    },
 
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
-    "outDir": "./dist",
-    "noEmit": false,
-    // Best practices
+    /* ---------- Paths / Base ---------- */
+    "rootDir": "./src", // where your .ts/.tsx live
+    "outDir": "./dist", // where JS will be written
+    "baseUrl": "./src",
+    "paths": { "@/*": ["*"] },
+
+    /* ---------- Module system ---------- */
+    "module": "CommonJS", // Node understands this
+    "moduleResolution": "node", // classic Node algorithm
+    "esModuleInterop": true, // smoother CJS <--> ESM interop
+
+    /* ---------- Emit behaviour ---------- */
+    "noEmit": false, // we *do* want JS output
+    "declaration": false, // turn on if you need .d.ts
+
+    /* ---------- Strictness / Safety ---------- */
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // Some stricter flags (disabled by default)
+    /* ---------- Opt-in stricter flags ---------- */
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["src/**/*"]
 }
