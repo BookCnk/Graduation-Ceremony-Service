@@ -1,34 +1,25 @@
+# -------- Build stage --------
 FROM node:20-slim AS builder
-
 WORKDIR /app
 
-# Copy package files and TypeScript config
+# 1. dependencies layer
 COPY package*.json ./
+RUN npm ci            
+
+# 2. copy sources and build
 COPY tsconfig*.json ./
+COPY src ./src
+RUN npm run build     
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build TypeScript code
-RUN npm run build
-
-# Production stage
-FROM node:20-slim
-
+# -------- Runtime stage ------
+FROM node:20-slim      
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
+RUN npm ci --only=production
 
-# Install only production dependencies
-RUN npm install --only=production
-
-# Copy built files from builder stage
+# pull compiled JS only
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
-
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

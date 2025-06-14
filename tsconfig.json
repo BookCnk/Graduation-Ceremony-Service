@@ -11,12 +11,12 @@
     "paths": {
       "@/*": ["*"]
     },
+
     // Bundler mode
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "noEmit": true,
-
+    "outDir": "./dist",
+    "noEmit": false,
     // Best practices
     "strict": true,
     "skipLibCheck": true,
