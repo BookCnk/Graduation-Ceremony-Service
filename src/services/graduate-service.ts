@@ -53,7 +53,11 @@ export const getGroupedQuotaByRound = async () => {
         f.id AS faculty_id,
         f.name AS faculty_name,
         rq.quota,
-        COUNT(g.id) AS student_count
+        (
+          SELECT COUNT(*) 
+          FROM graduation_ceremony.graduate 
+          WHERE graduate.faculty_id = f.id
+        ) AS student_count
     FROM graduation_ceremony.round_quota rq
     JOIN graduation_ceremony.faculty f ON rq.faculty_id = f.id
     JOIN graduation_ceremony.graduation_round r ON rq.round_id = r.id

@@ -7,3 +7,7 @@ export const getFaculty = async () => {
   );
   return rows;
 };
+
+export const createFaculty = async (name: string) => {
+  await db.query(`INSERT INTO faculty (name) VALUES (?)`, [name]);
+};
