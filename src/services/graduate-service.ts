@@ -137,6 +137,7 @@ interface QuotaFaculty {
 
 interface QuotaGroupPayload {
   round: number;
+  max_capacity: number;
   faculties: QuotaFaculty[];
 }
 
@@ -229,13 +230,14 @@ export const insertQuotaData = async (
 
       const [inserted]: any = await db.query(
         `INSERT INTO graduation_ceremony.graduation_round 
-         (round_number, max_capacity, description)
-         VALUES (?, ?, ?)`,
-        [group.round, 100, `รอบที่ ${group.round}`]
+        (round_number, max_capacity, description)
+        VALUES (?, ?, ?)`,
+        [group.round, group.max_capacity ?? 0, `รอบที่ ${group.round}`]
       );
+
       roundId = inserted.insertId;
     }
-
+    
     // 🧹 ล้างข้อมูลเดิมของรอบนี้
     await db.query(
       `DELETE FROM graduation_ceremony.round_quota 
