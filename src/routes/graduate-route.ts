@@ -10,6 +10,8 @@ import {
   getNextGraduatesAfterFirstController,
   setGraduateAsReceivedController,
   resetReceivedCardsController,
+  getGraduateSummaryController,
+  getCurrentRoundOverviewController,
 } from "../controllers/graduate-controller";
 
 export const apiRoutes = new Elysia()
@@ -39,6 +41,6 @@ export const apiRoutes = new Elysia()
     async ({ body }: { body: { id: any } }) =>
       await setGraduateAsReceivedController({ body })
   )
-  .get("/reset-cards", resetReceivedCardsController);
-
-    
+  .get("/reset-cards", resetReceivedCardsController)
+  .get("/graduate/summary", getGraduateSummaryController)
+  .get("/graduate/overview", getCurrentRoundOverviewController);

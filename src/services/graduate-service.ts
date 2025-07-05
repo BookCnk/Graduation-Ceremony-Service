@@ -1,4 +1,5 @@
 import { db } from "../config/db";
+import { getCurrentRoundOverview } from "./summary-service"; // <-- เพิ่มมา
 
 export const getGraduatesByFacultyPaginated = async (
   facultyId: number,
@@ -48,57 +49,62 @@ export const getGraduatesByFacultyPaginated = async (
 
 export const getGroupedQuotaByRound = async () => {
   const [rows]: any = await db.query(`
-    SELECT 
-        r.round_number,
-        f.id AS faculty_id,
-        f.name AS faculty_name,
-        rq.quota,
-        (
-          SELECT COUNT(*) 
-          FROM graduation_ceremony.graduate 
-          WHERE graduate.faculty_id = f.id
-        ) AS student_count
-    FROM graduation_ceremony.round_quota rq
-    JOIN graduation_ceremony.faculty f ON rq.faculty_id = f.id
-    JOIN graduation_ceremony.graduation_round r ON rq.round_id = r.id
-    LEFT JOIN graduation_ceremony.graduate g 
-        ON g.faculty_id = f.id AND g.round_id IS NULL
-    GROUP BY r.round_number, f.id, f.name, rq.quota
-
-    UNION ALL
-
-    SELECT 
-        NULL AS round_number,
-        f.id AS faculty_id,
-        f.name AS faculty_name,
-        0 AS quota,
-        COUNT(g.id) AS student_count
-    FROM graduation_ceremony.faculty f
-    LEFT JOIN graduation_ceremony.graduate g 
-        ON g.faculty_id = f.id AND g.round_id IS NULL
-    WHERE f.id NOT IN (
-        SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
-    )
-    GROUP BY f.id, f.name
-
-    UNION ALL
-
-    -- 🔹 ดึง "เฉพาะคณะที่มีนักศึกษายังไม่ได้จัดรอบ" ซ้ำอีกรอบเพื่อแสดงใน "ยังไม่จัดรอบ"
-    SELECT 
-        NULL AS round_number,
-        f.id AS faculty_id,
-        f.name AS faculty_name,
-        0 AS quota,
-        COUNT(g.id) AS student_count
-    FROM graduation_ceremony.faculty f
-    JOIN graduation_ceremony.graduate g 
-        ON g.faculty_id = f.id AND g.round_id IS NULL
-    WHERE f.id IN (
-        SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
-    )
-    GROUP BY f.id, f.name
-
-    ORDER BY faculty_id;
+    
+WITH per_faculty_min_sequence AS (
+  SELECT 
+    faculty_id,
+    MIN(global_sequence) AS global_sequence
+  FROM graduation_ceremony.graduate
+  WHERE round_id IS NULL AND global_sequence IS NOT NULL
+  GROUP BY faculty_id
+)
+SELECT 
+    r.round_number,
+    f.id AS faculty_id,
+    f.name AS faculty_name,
+    rq.quota,
+    (
+      SELECT COUNT(*) 
+      FROM graduation_ceremony.graduate 
+      WHERE graduate.faculty_id = f.id AND graduate.round_id = rq.round_id
+    ) AS student_count,
+    NULL AS global_sequence
+FROM graduation_ceremony.round_quota rq
+JOIN graduation_ceremony.faculty f ON rq.faculty_id = f.id
+JOIN graduation_ceremony.graduation_round r ON rq.round_id = r.id
+UNION ALL
+SELECT 
+    NULL AS round_number,
+    f.id AS faculty_id,
+    f.name AS faculty_name,
+    0 AS quota,
+    COUNT(g.id) AS student_count,
+    fs.global_sequence
+FROM graduation_ceremony.faculty f
+LEFT JOIN graduation_ceremony.graduate g 
+    ON g.faculty_id = f.id AND g.round_id IS NULL
+LEFT JOIN per_faculty_min_sequence fs ON fs.faculty_id = f.id
+WHERE f.id NOT IN (
+    SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
+)
+GROUP BY f.id, f.name, fs.global_sequence
+UNION ALL
+SELECT 
+    NULL AS round_number,
+    f.id AS faculty_id,
+    f.name AS faculty_name,
+    0 AS quota,
+    1 AS student_count,
+    g.global_sequence
+FROM graduation_ceremony.faculty f
+JOIN graduation_ceremony.graduate g 
+    ON g.faculty_id = f.id AND g.round_id IS NULL
+WHERE f.id IN (
+    SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
+)
+ORDER BY 
+  CASE WHEN global_sequence IS NULL THEN 1 ELSE 0 END,
+  global_sequence;
   `);
 
   // ✅ Grouping โดยแยกตามรอบ
@@ -237,7 +243,7 @@ export const insertQuotaData = async (
 
       roundId = inserted.insertId;
     }
-    
+
     // 🧹 ล้างข้อมูลเดิมของรอบนี้
     await db.query(
       `DELETE FROM graduation_ceremony.round_quota 
@@ -352,29 +358,41 @@ export const getFirstGraduateNotReceivedInEarliestRound = async (): Promise<{
   round_number: number;
 } | null> => {
   const [rows]: any = await db.query(`
-    SELECT 
-      g.id,
-      g.prefix,
-      g.first_name,
-      g.last_name,
-      g.sequence,
-      g.degree_name,
-      f.name AS faculty_name,
-      r.round_number
-    FROM graduation_ceremony.graduate g
-    JOIN graduation_ceremony.graduation_round r
-      ON g.round_id = r.id
-    JOIN graduation_ceremony.faculty f
-      ON g.faculty_id = f.id
-    WHERE g.has_received_card = 0
-      AND r.round_number = (
-        SELECT MIN(r2.round_number)
-        FROM graduation_ceremony.graduate g2
-        JOIN graduation_ceremony.graduation_round r2 ON g2.round_id = r2.id
-        WHERE g2.has_received_card = 0
-      )
-    ORDER BY g.id ASC
-    LIMIT 1;
+    
+WITH current_round AS (
+  SELECT MIN(r2.round_number) AS min_round
+  FROM graduation_ceremony.graduate g2
+  JOIN graduation_ceremony.graduation_round r2 
+    ON g2.round_id = r2.id
+  WHERE g2.has_received_card = 0
+),
+round_id_cte AS (
+  SELECT r.id AS round_id, r.round_number
+  FROM graduation_ceremony.graduation_round r
+  JOIN current_round cr ON r.round_number = cr.min_round
+),
+already_called_cte AS (
+  SELECT COUNT(*) AS already_called
+  FROM graduation_ceremony.graduate g
+  JOIN round_id_cte r ON g.round_id = r.round_id
+  WHERE g.has_received_card = 1
+)
+SELECT 
+  g.id,
+  g.first_name,
+  ac.already_called + 1 AS sequence,  -- 🔄 ใช้แทน g.sequence
+  g.degree_name,
+  g.degree_level,
+  f.name AS faculty_name,
+  r.round_number
+FROM graduation_ceremony.graduate g
+JOIN graduation_ceremony.graduation_round r ON g.round_id = r.id
+JOIN graduation_ceremony.faculty f ON g.faculty_id = f.id
+JOIN round_id_cte rid ON g.round_id = rid.round_id
+CROSS JOIN already_called_cte ac
+WHERE g.has_received_card = 0
+ORDER BY g.id ASC
+LIMIT 1;
   `);
 
   return rows.length > 0 ? rows[0] : null;
@@ -412,42 +430,41 @@ export const getRoundCallSummary = async (): Promise<{
 
 export const getNextGraduatesAfterFirst = async (): Promise<any[]> => {
   const [rows]: any = await db.query(`
-    SELECT 
-      g.id,
-      g.sequence,
-      g.prefix,
-      g.first_name,
-      g.last_name,
-      g.faculty_id,
-      f.name AS faculty_name,
-      r.round_number
-    FROM graduation_ceremony.graduate g
-    JOIN graduation_ceremony.faculty f ON g.faculty_id = f.id
-    JOIN graduation_ceremony.graduation_round r ON g.round_id = r.id
-    WHERE g.has_received_card = 0
-      AND g.round_id = (
-        SELECT r2.id
-        FROM graduation_ceremony.graduate g2
-        JOIN graduation_ceremony.graduation_round r2 ON g2.round_id = r2.id
-        WHERE g2.has_received_card = 0
-        ORDER BY r2.round_number ASC
-        LIMIT 1
-      )
-      AND g.sequence > (
-        SELECT COALESCE(MAX(g3.sequence), 0)
-        FROM graduation_ceremony.graduate g3
-        WHERE g3.has_received_card = 1
-          AND g3.round_id = (
-            SELECT r2.id
-            FROM graduation_ceremony.graduate g2
-            JOIN graduation_ceremony.graduation_round r2 ON g2.round_id = r2.id
-            WHERE g2.has_received_card = 0
-            ORDER BY r2.round_number ASC
-            LIMIT 1
-          )
-      )
-    ORDER BY g.faculty_id ASC, g.sequence ASC
-    LIMIT 2 OFFSET 1;
+    WITH current_round AS (
+  SELECT MIN(r2.round_number) AS min_round
+  FROM graduation_ceremony.graduate g2
+  JOIN graduation_ceremony.graduation_round r2 
+    ON g2.round_id = r2.id
+  WHERE g2.has_received_card = 0
+),
+round_id_cte AS (
+  SELECT id AS round_id, round_number
+  FROM graduation_ceremony.graduation_round r
+  JOIN current_round cr ON r.round_number = cr.min_round
+),
+last_called AS (
+  SELECT MAX(global_sequence) AS last_global_sequence
+  FROM graduation_ceremony.graduate
+  WHERE has_received_card = 1
+    AND round_id = (SELECT round_id FROM round_id_cte)
+)
+SELECT 
+  g.id,
+  g.global_sequence,
+  g.first_name,
+  g.faculty_id,
+  g.degree_level AS major,
+  f.name AS faculty_name,
+  r.round_number
+FROM graduation_ceremony.graduate g
+JOIN graduation_ceremony.faculty f ON g.faculty_id = f.id
+JOIN graduation_ceremony.graduation_round r ON g.round_id = r.id
+JOIN round_id_cte rid ON g.round_id = rid.round_id
+JOIN last_called lc ON 1=1
+WHERE g.has_received_card = 0
+  AND g.global_sequence > COALESCE(lc.last_global_sequence, 0)
+ORDER BY g.global_sequence ASC
+LIMIT 3 OFFSET 1;
   `);
 
   return rows;
@@ -463,6 +480,14 @@ export const setGraduateAsReceived = async (
     [id]
   );
 
+  const overview = await getCurrentRoundOverview();
+
+  await fetch("http://localhost:3002/broadcast-graduate-overview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(overview),
+  });
+
   return { success: true };
 };
 
@@ -474,4 +499,22 @@ export const resetReceivedCards = async (): Promise<{ success: boolean }> => {
   );
 
   return { success: result.affectedRows > 0 };
+};
+
+export const getGraduateSummary = async (): Promise<{
+  total_graduates: number;
+  received: number;
+  not_received: number;
+}> => {
+  const [rows]: any = await db.query(`
+    SELECT
+      COUNT(*) AS total_graduates,
+      SUM(CASE WHEN has_received_card = 1 THEN 1 ELSE 0 END) AS received,
+      SUM(CASE WHEN has_received_card = 0 THEN 1 ELSE 0 END) AS not_received
+    FROM graduation_ceremony.graduate;
+  `);
+
+  return rows.length > 0
+    ? rows[0]
+    : { total_graduates: 0, received: 0, not_received: 0 };
 };

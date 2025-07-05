@@ -10,7 +10,11 @@ import {
   getNextGraduatesAfterFirst,
   setGraduateAsReceived,
   resetReceivedCards,
+  getGraduateSummary,
+  
 } from "../services/graduate-service";
+
+import { getCurrentRoundOverview } from "../services/summary-service";
 import type { ApiResponse } from "../types/response";
 
 export const getGraduatesController = async ({
@@ -115,6 +119,7 @@ export const getNextGraduatesAfterFirstController = async (): Promise<
   }
 };
 
+// controller.ts
 export const setGraduateAsReceivedController = async ({
   body,
 }: {
@@ -139,3 +144,30 @@ export const resetReceivedCardsController = async () => {
   return success(null, "รีเซ็ตข้อมูลการรับบัตรเรียบร้อยแล้ว");
 };
 
+export const getGraduateSummaryController = async (): Promise<
+  ApiResponse<{
+    total_graduates: number;
+    received: number;
+    not_received: number;
+  }>
+> => {
+  try {
+    const result = await getGraduateSummary();
+    return success(result);
+  } catch (err) {
+    console.error("❌ getGraduateSummaryController error:", err);
+    return error("ไม่สามารถดึงข้อมูลสรุปบัณฑิตได้");
+  }
+};
+
+export const getCurrentRoundOverviewController = async (): Promise<
+  ApiResponse<any>
+> => {
+  try {
+    const result = await getCurrentRoundOverview();
+    return success(result);
+  } catch (err) {
+    console.error("❌ getCurrentRoundOverview error:", err);
+    return error("ไม่สามารถดึงข้อมูลภาพรวมรอบปัจจุบันได้");
+  }
+};

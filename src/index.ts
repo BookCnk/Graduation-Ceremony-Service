@@ -10,7 +10,7 @@ const app = new Elysia({ adapter: node() });
 
 app.use(
   cors({
-    origin: "*", 
+    origin: "*",
     credentials: true,
   })
 );
@@ -30,3 +30,19 @@ app.get("/health", async () => {
 
 app.listen(3000);
 console.log("🚀 Server running at http://localhost:3000/api/v1");
+
+import { io } from "socket.io-client";
+
+const socket = io("ws://localhost:3002", {
+  reconnectionDelayMax: 10000,
+  query: {
+    "my-key": "my-value",
+  },
+});
+
+socket.on("connect", () => {
+  console.log("connected");
+  // client-side
+  socket.emit("hello", "world");
+});
+

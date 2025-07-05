@@ -71,6 +71,7 @@ export const createGraduateController = async ({
     round_id: number;
     has_received_card?: number;
     graduate_type?: string | null;
+    global_sequence: number;
   }[];
 }) => {
   try {
@@ -87,6 +88,7 @@ export const createGraduateController = async ({
         round_id,
         has_received_card = 0,
         graduate_type = null,
+        global_sequence,
       } = graduate;
 
       if (
@@ -110,7 +112,8 @@ export const createGraduateController = async ({
         sequence,
         round_id,
         has_received_card,
-        graduate_type
+        graduate_type,
+        global_sequence
       );
     }
 

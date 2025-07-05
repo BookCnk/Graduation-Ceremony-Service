@@ -46,13 +46,14 @@ export const createGraduate = async (
   sequence: number,
   round_id: number,
   has_received_card: number = 0, // default เป็น 0
-  graduate_type: string | null = null // เพิ่ม field graduate_type
+  graduate_type: string | null = null, // เพิ่ม field graduate_type
+  global_sequence: number // เพิ่ม field graduate_type
 ) => {
   await db.query(
     `
     INSERT INTO graduation_ceremony.graduate
-      (id, prefix, first_name, last_name, degree_level, degree_name, faculty_id, sequence, round_id, has_received_card, graduate_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, prefix, first_name, last_name, degree_level, degree_name, faculty_id, sequence, round_id, has_received_card, graduate_type,global_sequence)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
     `,
     [
       id,
@@ -66,6 +67,7 @@ export const createGraduate = async (
       round_id,
       has_received_card,
       graduate_type,
+      global_sequence,
     ]
   );
 };
