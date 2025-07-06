@@ -1,6 +1,8 @@
 import { db } from "../config/db";
 import { getCurrentRoundOverview } from "./summary-service"; // <-- เพิ่มมา
 
+import { getGraduateOverviewController } from "../controllers/summary-controllr";
+
 export const getGraduatesByFacultyPaginated = async (
   facultyId: number,
   page: number = 1,
@@ -49,65 +51,55 @@ export const getGraduatesByFacultyPaginated = async (
 
 export const getGroupedQuotaByRound = async () => {
   const [rows]: any = await db.query(`
-    
-WITH per_faculty_min_sequence AS (
-  SELECT 
-    faculty_id,
-    MIN(global_sequence) AS global_sequence
-  FROM graduation_ceremony.graduate
-  WHERE round_id IS NULL AND global_sequence IS NOT NULL
-  GROUP BY faculty_id
-)
-SELECT 
-    r.round_number,
-    f.id AS faculty_id,
-    f.name AS faculty_name,
-    rq.quota,
-    (
-      SELECT COUNT(*) 
-      FROM graduation_ceremony.graduate 
-      WHERE graduate.faculty_id = f.id AND graduate.round_id = rq.round_id
-    ) AS student_count,
-    NULL AS global_sequence
-FROM graduation_ceremony.round_quota rq
-JOIN graduation_ceremony.faculty f ON rq.faculty_id = f.id
-JOIN graduation_ceremony.graduation_round r ON rq.round_id = r.id
-UNION ALL
-SELECT 
-    NULL AS round_number,
-    f.id AS faculty_id,
-    f.name AS faculty_name,
-    0 AS quota,
-    COUNT(g.id) AS student_count,
-    fs.global_sequence
-FROM graduation_ceremony.faculty f
-LEFT JOIN graduation_ceremony.graduate g 
-    ON g.faculty_id = f.id AND g.round_id IS NULL
-LEFT JOIN per_faculty_min_sequence fs ON fs.faculty_id = f.id
-WHERE f.id NOT IN (
-    SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
-)
-GROUP BY f.id, f.name, fs.global_sequence
-UNION ALL
-SELECT 
-    NULL AS round_number,
-    f.id AS faculty_id,
-    f.name AS faculty_name,
-    0 AS quota,
-    1 AS student_count,
-    g.global_sequence
-FROM graduation_ceremony.faculty f
-JOIN graduation_ceremony.graduate g 
-    ON g.faculty_id = f.id AND g.round_id IS NULL
-WHERE f.id IN (
-    SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
-)
-ORDER BY 
-  CASE WHEN global_sequence IS NULL THEN 1 ELSE 0 END,
-  global_sequence;
+    WITH per_faculty_min_sequence AS (
+      SELECT 
+        faculty_id,
+        MIN(global_sequence) AS global_sequence
+      FROM graduation_ceremony.graduate
+      WHERE round_id IS NULL AND global_sequence IS NOT NULL
+      GROUP BY faculty_id
+    ),
+    total_students_per_faculty AS (
+      SELECT 
+        faculty_id,
+        COUNT(*) AS total_students
+      FROM graduation_ceremony.graduate
+      GROUP BY faculty_id
+    )
+
+    SELECT 
+      r.round_number,
+      f.id AS faculty_id,
+      f.name AS faculty_name,
+      rq.quota,
+      COALESCE(ts.total_students, 0) AS student_count,
+      NULL AS global_sequence
+    FROM graduation_ceremony.round_quota rq
+    JOIN graduation_ceremony.faculty f ON rq.faculty_id = f.id
+    JOIN graduation_ceremony.graduation_round r ON rq.round_id = r.id
+    LEFT JOIN total_students_per_faculty ts ON ts.faculty_id = f.id
+
+    UNION ALL
+
+    SELECT 
+      NULL AS round_number,
+      f.id AS faculty_id,
+      f.name AS faculty_name,
+      0 AS quota,
+      COALESCE(ts.total_students, 0) AS student_count,
+      fs.global_sequence
+    FROM graduation_ceremony.faculty f
+    LEFT JOIN total_students_per_faculty ts ON ts.faculty_id = f.id
+    LEFT JOIN per_faculty_min_sequence fs ON fs.faculty_id = f.id
+    WHERE f.id NOT IN (
+      SELECT DISTINCT faculty_id FROM graduation_ceremony.round_quota
+    )
+
+    ORDER BY 
+      CASE WHEN global_sequence IS NULL THEN 1 ELSE 0 END,
+      global_sequence
   `);
 
-  // ✅ Grouping โดยแยกตามรอบ
   const grouped: Record<string, any[]> = {};
 
   for (const row of rows) {
@@ -117,12 +109,10 @@ ORDER BY
 
     if (!grouped[title]) grouped[title] = [];
 
-    // ป้องกันข้อมูลซ้ำในรายการ "คณะที่ยังไม่ได้จัดรอบ"
     const isDuplicate = grouped[title].some(
       (item) => item.id === row.faculty_id
     );
 
-    // ✅ ถ้าอยู่ในหมวด "คณะที่ยังไม่ได้จัดรอบ" และยังไม่เคยเพิ่ม ก็เพิ่ม
     if (title === "คณะที่ยังไม่ได้จัดรอบ" && isDuplicate) continue;
 
     grouped[title].push({
@@ -217,9 +207,7 @@ export const insertQuotaData = async (
     return { success: true };
   }
 
-  // ✅ ทำงานตามรอบที่ส่งเข้ามา
   for (const group of payload) {
-    // 🔍 ตรวจรอบ
     const [existingRounds]: any = await db.query(
       `SELECT id FROM graduation_ceremony.graduation_round 
        WHERE round_number = ?`,
@@ -231,7 +219,6 @@ export const insertQuotaData = async (
     if (existingRounds.length > 0) {
       roundId = existingRounds[0].id;
     } else {
-      // ไม่มี faculty → ไม่ต้องสร้างรอบใหม่
       if (!group.faculties || group.faculties.length === 0) continue;
 
       const [inserted]: any = await db.query(
@@ -244,7 +231,6 @@ export const insertQuotaData = async (
       roundId = inserted.insertId;
     }
 
-    // 🧹 ล้างข้อมูลเดิมของรอบนี้
     await db.query(
       `DELETE FROM graduation_ceremony.round_quota 
        WHERE round_id = ?`,
@@ -257,10 +243,8 @@ export const insertQuotaData = async (
       [roundId]
     );
 
-    // ⛔ ไม่มี faculty → จบแค่นี้
     if (!group.faculties || group.faculties.length === 0) continue;
 
-    // 🔁 เพิ่ม quota ใหม่
     for (const faculty of group.faculties) {
       await db.query(
         `INSERT INTO graduation_ceremony.round_quota 
@@ -269,7 +253,6 @@ export const insertQuotaData = async (
         [roundId, faculty.faculty_id, faculty.quota]
       );
 
-      // 🔁 จัดนักศึกษาเข้ารอบตามลำดับ sequence
       const [graduatesToUpdate]: any = await db.query(
         `SELECT id FROM graduation_ceremony.graduate
          WHERE faculty_id = ? AND round_id IS NULL
@@ -481,11 +464,17 @@ export const setGraduateAsReceived = async (
   );
 
   const overview = await getCurrentRoundOverview();
-
   await fetch("http://localhost:3002/broadcast-graduate-overview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
+  });
+
+  const summary: any = await getGraduateOverviewController();
+  await fetch("http://localhost:3002/broadcast-summary-overview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(summary.data),
   });
 
   return { success: true };

@@ -13,6 +13,7 @@ import {
   getGraduateSummaryController,
   getCurrentRoundOverviewController,
 } from "../controllers/graduate-controller";
+import { getGraduateOverviewController } from "../controllers/summary-controllr";
 
 export const apiRoutes = new Elysia()
   .post("/graduates", getGraduatesController)
@@ -43,4 +44,5 @@ export const apiRoutes = new Elysia()
   )
   .get("/reset-cards", resetReceivedCardsController)
   .get("/graduate/summary", getGraduateSummaryController)
-  .get("/graduate/overview", getCurrentRoundOverviewController);
+  .get("/graduate/overview", getCurrentRoundOverviewController)
+  .get("/summary/overview", getGraduateOverviewController);
