@@ -12,6 +12,7 @@ import {
   resetReceivedCardsController,
   getGraduateSummaryController,
   getCurrentRoundOverviewController,
+  deleteAllGraduationDataController,
 } from "../controllers/graduate-controller";
 import { getGraduateOverviewController } from "../controllers/summary-controllr";
 
@@ -45,4 +46,5 @@ export const apiRoutes = new Elysia()
   .get("/reset-cards", resetReceivedCardsController)
   .get("/graduate/summary", getGraduateSummaryController)
   .get("/graduate/overview", getCurrentRoundOverviewController)
-  .get("/summary/overview", getGraduateOverviewController);
+  .get("/summary/overview", getGraduateOverviewController)
+  .post("/delete-all-graduation-data", deleteAllGraduationDataController);

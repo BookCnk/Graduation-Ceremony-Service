@@ -11,7 +11,7 @@ import {
   setGraduateAsReceived,
   resetReceivedCards,
   getGraduateSummary,
-  
+  deleteAllGraduationData,
 } from "../services/graduate-service";
 
 import { getCurrentRoundOverview } from "../services/summary-service";
@@ -169,5 +169,15 @@ export const getCurrentRoundOverviewController = async (): Promise<
   } catch (err) {
     console.error("❌ getCurrentRoundOverview error:", err);
     return error("ไม่สามารถดึงข้อมูลภาพรวมรอบปัจจุบันได้");
+  }
+};
+
+export const deleteAllGraduationDataController = async () => {
+  try {
+    const result = await deleteAllGraduationData();
+    return success(result, "ลบข้อมูลทั้งหมดเรียบร้อยแล้ว");
+  } catch (err) {
+    console.error("❌ deleteAllGraduationDataController error:", err);
+    return error("ไม่สามารถลบข้อมูลทั้งหมดได้");
   }
 };

@@ -507,3 +507,29 @@ export const getGraduateSummary = async (): Promise<{
     ? rows[0]
     : { total_graduates: 0, received: 0, not_received: 0 };
 };
+
+export const deleteAllGraduationData = async (): Promise<{
+  success: boolean;
+}> => {
+  const conn = await db.getConnection();
+  await conn.beginTransaction();
+
+  try {
+    await conn.query(`DELETE FROM graduation_ceremony.graduate WHERE 1=1`);
+
+    await conn.query(`DELETE FROM graduation_ceremony.round_quota WHERE 1=1`);
+
+    await conn.query(
+      `DELETE FROM graduation_ceremony.graduation_round WHERE 1=1`
+    );
+
+    await conn.commit();
+    conn.release();
+
+    return { success: true };
+  } catch (err) {
+    await conn.rollback();
+    conn.release();
+    throw err;
+  }
+};
