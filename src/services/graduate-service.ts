@@ -1,5 +1,7 @@
 import { db } from "../config/db";
 import { getCurrentRoundOverview } from "./summary-service"; // <-- เพิ่มมา
+import dotenv from "dotenv";
+dotenv.config();
 
 import { getGraduateOverviewController } from "../controllers/summary-controllr";
 
@@ -464,14 +466,14 @@ export const setGraduateAsReceived = async (
   );
 
   const overview = await getCurrentRoundOverview();
-  await fetch("http://localhost:3002/broadcast-graduate-overview", {
+  await fetch(`${process.env.SOCKET_URL}/broadcast-graduate-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
   });
 
   const summary: any = await getGraduateOverviewController();
-  await fetch("http://localhost:3002/broadcast-summary-overview", {
+  await fetch(`${process.env.SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(summary.data),
@@ -479,6 +481,7 @@ export const setGraduateAsReceived = async (
 
   return { success: true };
 };
+
 
 export const resetReceivedCards = async (): Promise<{ success: boolean }> => {
   const [result]: any = await db.query(

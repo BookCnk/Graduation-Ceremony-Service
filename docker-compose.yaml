@@ -12,6 +12,7 @@ services:
       DB_PASSWORD: root_password 
       DB_NAME: graduation_ceremony
       JWT_SECRET: your_jwt_secret_key
+      SOCKET_URL: http://10.2.15.114:3002    
     depends_on:
       - db
     volumes:
