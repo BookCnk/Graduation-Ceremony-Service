@@ -466,7 +466,7 @@ export const setGraduateAsReceived = async (
   );
 
   const overview = await getCurrentRoundOverview();
-  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-graduate-overview`, {
+  await fetch(`http://127.0.0.1:3002/broadcast-graduate-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
@@ -475,7 +475,7 @@ export const setGraduateAsReceived = async (
   const summary: any = await getGraduateOverviewController();
   console.log(summary);
 
-  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-summary-overview`, {
+  await fetch(`http://127.0.0.1:3002/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(summary.data),
