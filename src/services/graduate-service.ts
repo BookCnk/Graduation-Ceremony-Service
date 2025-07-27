@@ -454,6 +454,7 @@ LIMIT 3 OFFSET 1;
 
   return rows;
 };
+console.log(process.env.VITE_SOCKET_URL);
 
 export const setGraduateAsReceived = async (
   id: number
@@ -466,16 +467,16 @@ export const setGraduateAsReceived = async (
   );
 
   const overview = await getCurrentRoundOverview();
-  await fetch(`http://127.0.0.1:3002/broadcast-graduate-overview`, {
+
+  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-graduate-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
   });
 
   const summary: any = await getGraduateOverviewController();
-  console.log(summary);
 
-  await fetch(`http://127.0.0.1:3002/broadcast-summary-overview`, {
+  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(summary.data),
