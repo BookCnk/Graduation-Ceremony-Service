@@ -466,14 +466,16 @@ export const setGraduateAsReceived = async (
   );
 
   const overview = await getCurrentRoundOverview();
-  await fetch(`${process.env.SOCKET_URL}/broadcast-graduate-overview`, {
+  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-graduate-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
   });
 
   const summary: any = await getGraduateOverviewController();
-  await fetch(`${process.env.SOCKET_URL}/broadcast-summary-overview`, {
+  console.log(summary);
+
+  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(summary.data),
@@ -481,7 +483,6 @@ export const setGraduateAsReceived = async (
 
   return { success: true };
 };
-
 
 export const resetReceivedCards = async (): Promise<{ success: boolean }> => {
   const [result]: any = await db.query(
