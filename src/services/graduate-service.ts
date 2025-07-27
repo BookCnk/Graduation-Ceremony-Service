@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { getGraduateOverviewController } from "../controllers/summary-controllr";
+const BASE_SOCKET_URL = "http://10.2.15.114:3002";
 
 export const getGraduatesByFacultyPaginated = async (
   facultyId: number,
@@ -468,7 +469,7 @@ export const setGraduateAsReceived = async (
 
   const overview = await getCurrentRoundOverview();
 
-  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-graduate-overview`, {
+  await fetch(`${BASE_SOCKET_URL}/broadcast-graduate-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(overview),
@@ -476,7 +477,7 @@ export const setGraduateAsReceived = async (
 
   const summary: any = await getGraduateOverviewController();
 
-  await fetch(`${process.env.VITE_SOCKET_URL}/broadcast-summary-overview`, {
+  await fetch(`${BASE_SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(summary.data),
