@@ -476,11 +476,10 @@ export const setGraduateAsReceived = async (
   });
 
   const summary: any = await getGraduateOverviewController();
-
   await fetch(`${BASE_SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(summary.data?.data),
+    body: JSON.stringify(summary),
   });
 
   return { success: true };
