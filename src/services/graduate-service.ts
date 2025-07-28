@@ -480,7 +480,7 @@ export const setGraduateAsReceived = async (
   await fetch(`${BASE_SOCKET_URL}/broadcast-summary-overview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(summary.data),
+    body: JSON.stringify(summary.data?.data),
   });
 
   return { success: true };
