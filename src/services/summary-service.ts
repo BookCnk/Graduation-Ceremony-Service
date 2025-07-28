@@ -37,7 +37,6 @@ export const getCurrentRoundOverview = async (): Promise<any | null> => {
       ORDER BY g.global_sequence ASC
       LIMIT 1
     ),
-    -- ✅ คนทั้งหมดในคณะ (ไม่จำกัดรอบ)
     current_faculty_quota AS (
       SELECT 
         g.faculty_id,
@@ -46,7 +45,6 @@ export const getCurrentRoundOverview = async (): Promise<any | null> => {
       JOIN current_calling cc ON g.faculty_id = cc.faculty_id
       GROUP BY g.faculty_id
     ),
-    -- ✅ คนที่รับบัตรแล้วในคณะเดียวกัน (ไม่จำกัดรอบ)
     current_faculty_called AS (
       SELECT 
         g.faculty_id,
@@ -62,12 +60,12 @@ export const getCurrentRoundOverview = async (): Promise<any | null> => {
       rq.total_quota AS total_capacity,
       gs.called_count,
       gs.remaining_count,
-      cc.id AS current_calling_id,
-      cc.sequence AS current_calling_sequence,
-      f.name AS current_faculty_name,
-      cfq.total_students AS current_faculty_quota,
+      COALESCE(cc.id, 0) AS current_calling_id,
+      COALESCE(cc.sequence, 0) AS current_calling_sequence,
+      COALESCE(f.name, '') AS current_faculty_name,
+      COALESCE(cfq.total_students, 0) AS current_faculty_quota,
       COALESCE(cfc.called_count, 0) AS current_faculty_called,
-      cfq.total_students - COALESCE(cfc.called_count, 0) AS current_faculty_remaining
+      COALESCE(cfq.total_students, 0) - COALESCE(cfc.called_count, 0) AS current_faculty_remaining
     FROM current_round cr
     JOIN round_quota_total rq ON rq.round_id = cr.id
     JOIN graduate_summary gs ON gs.round_id = cr.id
@@ -77,5 +75,19 @@ export const getCurrentRoundOverview = async (): Promise<any | null> => {
     LEFT JOIN current_faculty_called cfc ON cfc.faculty_id = cc.faculty_id;
   `);
 
-  return rows.length > 0 ? rows[0] : null;
+  // ✅ Ensure something is returned even if no rows found
+  if (rows.length > 0) return rows[0];
+  return {
+    round_number: 0,
+    total_capacity: 0,
+    called_count: 0,
+    remaining_count: 0,
+    current_calling_id: 0,
+    current_calling_sequence: 0,
+    current_faculty_name: "",
+    current_faculty_quota: 0,
+    current_faculty_called: 0,
+    current_faculty_remaining: 0,
+  };
 };
+
