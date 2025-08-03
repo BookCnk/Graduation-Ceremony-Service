@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { getGraduateOverviewController } from "../controllers/summary-controllr";
-const BASE_SOCKET_URL = "https://grad.kmutt.ac.th/socket.io";
+const BASE_SOCKET_URL = "https://grad.kmutt.ac.th";
 
 export const getGraduatesByFacultyPaginated = async (
   facultyId: number,
